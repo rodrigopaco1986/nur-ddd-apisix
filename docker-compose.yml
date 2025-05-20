@@ -1,0 +1,142 @@
+version: '3.8'
+services:
+  etcd:
+    image: bitnami/etcd:3.5
+    container_name: etcd
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+    ports:
+      - "2379:2379"
+    volumes:
+      - etcd_data:/bitnami/etcd
+    networks:
+      - apisix
+      - laravel_network
+
+  apisix:
+    image: apache/apisix:3.12.0-debian
+    container_name: apisix
+    restart: always
+    depends_on:
+      - etcd
+    environment:
+      - APISIX_ADMIN_KEY=edd1c9f034335f136f87ad84b625c8f1
+      - ETCD_HOST=http://etcd:2379
+    volumes:
+      - ./apisix.yaml:/usr/local/apisix/conf/config.yaml:ro
+    ports:
+      - "9080:9080"   # proxy listen
+      - "9180:9180"   # admin API
+    networks:
+      - apisix
+      - laravel_network
+  apisix-dashboard:
+    image: apache/apisix-dashboard:3.0.1-alpine
+    container_name: apisix-dashboard
+    restart: always
+    depends_on:
+      - apisix
+      - etcd
+    volumes:
+      - ./dashboard.yaml:/usr/local/apisix-dashboard/conf/conf.yaml:ro
+    ports:
+      - "9000:9000"
+    networks:
+      - apisix
+      - laravel_network
+  auth-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth-app
+    restart: on-failure
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    networks:
+      - apisix
+      - laravel_network
+    depends_on:
+      - db
+    env_file:
+      - .env.docker
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+    extra_hosts:
+      - "myinvoice.local:172.18.0.2"
+    healthcheck:
+      test: ["CMD", "php", "-r", "echo @fsockopen('localhost', 9000) ? 'Healthy' : 'Unhealthy';"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  webserver:
+    image: nginx:latest
+    container_name: nginx_server
+    restart: on-failure
+    ports:
+      - "8000:80"
+      - "8443:443"
+    volumes:
+      - .:/var/www/html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/nginx/certs 
+    networks:
+      - apisix
+      - laravel_network
+    depends_on:
+      - auth-app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: on-failure
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - apisix
+      - laravel_network
+    env_file:
+      - .env.docker
+    environment:
+      MYSQL_DATABASE: auth_app
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+networks:
+  apisix:
+    driver: bridge
+  laravel_network:
+    driver: bridge
+
+volumes:
+  etcd_data:
+    driver: local
+  laravel_app:
+  mysql_data:

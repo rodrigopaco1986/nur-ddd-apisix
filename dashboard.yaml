@@ -1,0 +1,27 @@
+conf:
+  listen:
+    host: 0.0.0.0
+    port: 9000
+
+  etcd:
+    endpoints:
+      - etcd:2379
+    timeout: 30 # retry timeout
+    max_retries: 5
+  # allow all IPs (Docker NAT connections come from a bridge IP, not 127.0.0.1)
+  allow_list:
+    - 0.0.0.0/0 # any IPv4
+    - ::/0 # any IPv6
+  log:
+    error_log:
+      level: warn
+      file_path: /dev/stderr
+    access_log:
+      file_path: /dev/stdout
+
+authentication:
+  secret: secret
+  expire_time: 3600 # ← keeps your session alive for 1 hour
+  users:
+    - username: admin
+      password: admin
