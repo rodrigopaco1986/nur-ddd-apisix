@@ -6,6 +6,12 @@ apisix:
   control:
     ip: "0.0.0.0"
     port: 9092
+  secret:
+    vault:
+      host: "${VAULT_ADDR}"
+      token: "${VAULT_TOKEN}"
+      prefix: "${VAULT_PREFIX}"
+      engine_version: 2
 
 deployment:
   admin:

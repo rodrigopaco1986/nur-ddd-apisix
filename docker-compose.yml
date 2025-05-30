@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 services:
   etcd:
     image: bitnami/etcd:3.5
@@ -14,16 +14,19 @@ services:
     networks:
       - apisix
       - laravel_network
-
   apisix:
     image: apache/apisix:3.12.0-debian
     container_name: apisix
     restart: always
     depends_on:
       - etcd
+      - vault
     environment:
       - APISIX_ADMIN_KEY=edd1c9f034335f136f87ad84b625c8f1
       - ETCD_HOST=http://etcd:2379
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=root
+      - VAULT_PREFIX=secret/data/apisix/oauth
     volumes:
       - ./apisix.yaml:/usr/local/apisix/conf/config.yaml:ro
     ports:
@@ -32,6 +35,7 @@ services:
     networks:
       - apisix
       - laravel_network
+
   apisix-dashboard:
     image: apache/apisix-dashboard:3.0.1-alpine
     container_name: apisix-dashboard
@@ -43,6 +47,39 @@ services:
       - ./dashboard.yaml:/usr/local/apisix-dashboard/conf/conf.yaml:ro
     ports:
       - "9000:9000"
+    networks:
+      - apisix
+      - laravel_network
+
+  vault:
+    hostname: vault
+    container_name: vault
+    image: vault:1.13.3
+    environment:
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8200
+    ports:
+      - 8200:8200
+    volumes:
+      - ./volumes/vault/file:/vault/file:rw
+      - ./vault/config/config.json:/vault/config/config.json:ro
+    cap_add:
+      - IPC_LOCK
+    entrypoint: vault server -dev -dev-listen-address="0.0.0.0:8200" -dev-root-token-id="root"
+    networks:
+      - apisix
+      - laravel_network
+
+  vault-init:
+    container_name: vault-init
+    image: vault:1.13.3
+    volumes:
+      - ./vault/init/vault-init.sh:/vault-init.sh
+      - ./vault/config/app-policy.hcl:/app-policy.hcl
+    depends_on:
+      - vault
+    restart: "no"
+    entrypoint: sh -c "/vault-init.sh"
     networks:
       - apisix
       - laravel_network
@@ -60,6 +97,7 @@ services:
       - laravel_network
     depends_on:
       - db
+      - apisix
     env_file:
       - .env.docker
     environment:

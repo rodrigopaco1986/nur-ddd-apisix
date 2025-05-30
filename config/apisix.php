@@ -2,41 +2,40 @@
 
 return [
 
-    'base_uri'   => env('APISIX_ADMIN_URI', ''),
-    'admin_key'  => env('APISIX_ADMIN_KEY', ''),
+    'base_uri' => env('APISIX_ADMIN_URI', ''),
+    'admin_key' => env('APISIX_ADMIN_KEY', ''),
 
-    'routes'     => [
+    'routes' => [
 
         'login' => [
-            'uri'     => '/api/login',
+            'uri' => '/api/login',
             'methods' => ['POST'],
             'plugins' => [
                 'proxy-rewrite' => [
                     'uri' => '/oauth/token',
-                    "scheme"=> "https",
+                    'scheme' => 'https',
                 ],
             ],
-            'upstream'=> [
-                'type'  => 'roundrobin',
+            'upstream' => [
+                'type' => 'roundrobin',
                 'nodes' => ['webserver:443' => 1],
-                "scheme"=> "https",
+                'scheme' => 'https',
             ],
         ],
 
         'protected-api' => [
-            'uri'     => '/api/*',
+            'uri' => '/api/*',
             'plugins' => [
                 'jwt-auth' => [
-                    'algorithm'  => 'RS256',
-                    'public_key' => file_get_contents(storage_path('oauth-public.key')),
                     'key_claim_name' => 'sub',
-                    "hide_credentials" => false,
+                    'algorithms' => ['RS256'],
+                    'hide_credentials' => false,
                 ],
             ],
-            'upstream'=> [
-                'type'  => 'roundrobin',
+            'upstream' => [
+                'type' => 'roundrobin',
                 'nodes' => ['webserver:443' => 1],
-                "scheme"=> "https",
+                'scheme' => 'https',
             ],
         ],
 

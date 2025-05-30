@@ -2,12 +2,11 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
-use Laravel\Passport\ClientRepository;
 use App\Models\User;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Laravel\Passport\ClientRepository;
 
 class SetupAuth extends Command
 {
@@ -35,7 +34,7 @@ class SetupAuth extends Command
     {
         $email = $this->option('email');
         $password = $this->option('password');
-        $clientName = $this->option('client-name');
+        $clientName = $this->option('client-name', 'APISIX Password Client');
 
         DB::beginTransaction();
         try {
@@ -43,7 +42,7 @@ class SetupAuth extends Command
             $user = User::firstOrCreate(
                 ['email' => $email],
                 [
-                    'name'     => ucfirst(explode('@', $email)[0]),
+                    'name' => ucfirst(explode('@', $email)[0]),
                     'password' => Hash::make($password),
                 ]
             );
@@ -51,7 +50,7 @@ class SetupAuth extends Command
             $this->info("User [{$email}] is set up.");
 
             // Create Passport Password Grant Client
-            $clientRepo = new ClientRepository();
+            $clientRepo = new ClientRepository;
             $client = $clientRepo->createPasswordGrantClient(
                 $clientName,    // client name
                 null,           // user provider (null for default)
@@ -68,12 +67,14 @@ class SetupAuth extends Command
                     $this->components->warn('The client secret will not be shown again, so don\'t lose it!');
                 }
             }
-            
+
             DB::commit();
+
             return 0;
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('Setup failed: ' . $e->getMessage());
+            $this->error('Setup failed: '.$e->getMessage());
+
             return 1;
         }
     }

@@ -1,26 +1,30 @@
 <?php
+
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use App\Exceptions\ApisixException;
+use Illuminate\Support\Facades\Http;
 
 class ApisixClient
 {
     protected $baseUri;
+
     protected $apiKey;
 
     public function __construct()
     {
         $this->baseUri = config('apisix.base_uri');
-        $this->apiKey  = config('apisix.admin_key');
+        $this->apiKey = config('apisix.admin_key');
     }
 
     protected function client()
     {
         return Http::withHeaders([
-            'X-API-KEY'    => $this->apiKey,
+            'X-API-KEY' => $this->apiKey,
             'Content-Type' => 'application/json',
-        ])->baseUrl($this->baseUri);
+        ])
+        // ->withOptions(['debug' => true])
+            ->baseUrl($this->baseUri);
     }
 
     public function pushRoutes(): void
@@ -33,32 +37,30 @@ class ApisixClient
 
             if (! $res->successful()) {
                 throw new ApisixException(
-                    "APISIX route '{$id}' failed: " . $res->status() . ' ' . $res->body()
+                    "APISIX route '{$id}' failed: ".$res->status().' '.$res->body()
                 );
             }
         }
     }
 
-    public function pushConsumers(string $userKey, string $consumerId, string $jwtAuthCredentials): void
+    public function pushConsumers(string $consumerId, string $publicOauthToken): void
     {
         $res = $this->client()
             ->put("/consumers/{$consumerId}", [
-            'username' => $consumerId,
-            'plugins' => [
-                'jwt-auth' => [
-                    'key' => $userKey,
-                    'key_claim_name' => 'sub',
-                    'algorithm' => 'RS256',
-                    'public_key' => $jwtAuthCredentials,
-                    'hide_credentials' => false,
-                ]
-            ]
-        ]);
-        
+                'username' => $consumerId,
+                'plugins' => [
+                    'jwt-auth' => [
+                        'key' => $consumerId,
+                        'algorithm' => 'RS256',
+                        'public_key' => $publicOauthToken,
+                    ],
+                ],
+            ]);
+
         if (! $res->successful()) {
-                throw new ApisixException(
-                    "APISIX create consumer '{$consumerId}' failed: " . $res->status() . ' ' . $res->body()
-                );
+            throw new ApisixException(
+                "APISIX create consumer '{$consumerId}' failed: ".$res->status().' '.$res->body()
+            );
         }
     }
 }

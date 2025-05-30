@@ -2,12 +2,15 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Services\ApisixClient;
+use App\Services\VaultClient;
+use Illuminate\Console\Command;
 
 class PushApisixRoutes extends Command
 {
-    private $client;
+    private $apisixClient;
+
+    private $vaultClient;
 
     /**
      * The name and signature of the console command.
@@ -15,7 +18,7 @@ class PushApisixRoutes extends Command
      * @var string
      */
     protected $signature = 'apisix:push-routes
-                            {--user-key=1 : User key}';
+                            {--consumer-id=1 : Consumer id}';
 
     /**
      * The console command description.
@@ -24,10 +27,11 @@ class PushApisixRoutes extends Command
      */
     protected $description = 'Import APISIX routes from config into the gateway';
 
-    public function __construct(ApisixClient $client)
+    public function __construct(ApisixClient $apisixClient, VaultClient $vaultClient)
     {
         parent::__construct();
-        $this->client = $client;
+        $this->apisixClient = $apisixClient;
+        $this->vaultClient = $vaultClient;
     }
 
     /**
@@ -35,16 +39,15 @@ class PushApisixRoutes extends Command
      */
     public function handle()
     {
-        $userKey = (string)$this->option('user-key');
+        $consumerId = (string) $this->option('consumer-id');
 
         $this->info('→ Pushing APISIX routes...');
-        $this->client->pushRoutes();
+        $this->apisixClient->pushRoutes();
         $this->info('✔ Done.');
 
-        $consumerId = 'passport_users';
-        $jwtAuthCredentials = file_get_contents(storage_path('oauth-public.key'));
+        $publicOauthToken = $this->vaultClient->getOauthKey('public');
         $this->info('→ Pushing APISIX consumers...');
-        $this->client->pushConsumers($userKey, $consumerId, $jwtAuthCredentials);
+        $this->apisixClient->pushConsumers($consumerId, $publicOauthToken);
         $this->info('✔ Done.');
     }
 }

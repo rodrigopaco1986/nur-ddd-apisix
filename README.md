@@ -1,37 +1,55 @@
 # Auth Micro service and Api gateway
 
-This is an, in progress, micro service to manage authentication using APISIX and laravel 12
-Video to setup: https://www.youtube.com/watch?v=Roy_c9Th1Ek
+This is an, in progress, micro service to manage authentication using APISIX, VAULT and laravel 12
+Video to setup: 
 
-## Installation of APISIX and microservice to manage the authentication
+## Installation of APISIX, VAULT and microservice to manage the authentication
 
 - clone the repository
 
 ```bash
-git clone https://github.com/nur-university/ms2024-m6-act1-rodrigopaco1986
+git clone https://github.com/rodrigopaco1986/nur-ddd-apisix
 ```
 
-- access to the folder and run the containers
+- access to the folder and run the containers (etcd, apisix, apisix-dashboard, vault, auth-app, webserver, db)
 ```bash
 cd folder
 docker compose up -d
 ```
 
-- Access to the terminal of the auth-app container and run the command to push routes/consumers to apisix
+- access to auth-app container logs to get user key and client secret for default created user.
+
+```bash
+docker logs auth-app
+```
+
+Find lines like:
+
+| -----------------------------------------------------------------------------|
+| Client ID ............................. 019721a8-3998-73c5-976b-5cb154251e58 |
+| User Key ................................................................. 1 |
+| Client Secret ..................... 9cWhvRCkisQR3tEuNZKLt2soP0ChfshWH00nz1Ib |
+| WARN  The client secret will not be shown again, so don't lose it!           |
+| -----------------------------------------------------------------------------|
+
+
+
+- Copy User Key and Client Secret to later make requests to api gateway.
+Default credentials are:
+username: admin@gmail.com
+password: Admin123_
+
+
+- If you want to create another user, access to the terminal of the auth-app container and run the command to create new user:
+```bash
+php artisan auth:setup newUserEmail@gmail.com SomePassword
+```
+
+- Then run the command, in the same container, to push routes/consumers to apisix
 ```bash
 docker exec -it auth-app bash
 php artisan apisix:push-routes
 ```
-
-Run command to add routes to APISIX inside the auth-app container
-```bash
-php artisan auth:setup
-```
-
-Copy User Key and Client Secret to later make requests to api gateways.
-Default credentials are:
-username: admin@gmail.com
-password: Admin123_
 
 ## Make request to endpoints
 
