@@ -23,15 +23,15 @@ docker compose up -d
 docker logs auth-app
 ```
 
-Find lines like:
+Find data, like:
 
-| -----------------------------------------------------------------------------|
-| Client ID ............................. 019721a8-3998-73c5-976b-5cb154251e58 |
-| User Key ................................................................. 1 |
-| Client Secret ..................... 9cWhvRCkisQR3tEuNZKLt2soP0ChfshWH00nz1Ib |
-| WARN  The client secret will not be shown again, so don't lose it!           |
-| -----------------------------------------------------------------------------|
+|Field|Value|
+|---|---|
+|Client ID|019721a8-3998-73c5-976b-5cb154251e58|
+|User Key|1|
+|Client Secret|9cWhvRCkisQR3tEuNZKLt2soP0ChfshWH00nz1Ib|
 
+WARN The client secret will not be shown again, so don't lose it!
 
 
 - Copy User Key and Client Secret to later make requests to api gateway.
