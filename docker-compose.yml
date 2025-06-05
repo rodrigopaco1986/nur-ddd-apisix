@@ -35,6 +35,7 @@ services:
     networks:
       - apisix
       - laravel_network
+      - shared_services_network
 
   apisix-dashboard:
     image: apache/apisix-dashboard:3.0.1-alpine
@@ -172,6 +173,9 @@ networks:
     driver: bridge
   laravel_network:
     driver: bridge
+  shared_services_network:
+    driver: bridge
+    name: shared-services-network
 
 volumes:
   etcd_data:

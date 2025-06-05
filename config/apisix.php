@@ -1,6 +1,8 @@
 <?php
 
-return [
+$routesConfig = require_once __DIR__ . '/apisixroutes.php';
+
+$config = [
 
     'base_uri' => env('APISIX_ADMIN_URI', ''),
     'admin_key' => env('APISIX_ADMIN_KEY', ''),
@@ -23,7 +25,7 @@ return [
             ],
         ],
 
-        'protected-api' => [
+        'protected-auth-api' => [
             'uri' => '/api/*',
             'plugins' => [
                 'jwt-auth' => [
@@ -38,6 +40,43 @@ return [
                 'scheme' => 'https',
             ],
         ],
-
     ],
 ];
+
+$routesList = collect($routesConfig)->map(function ($item, $key) {
+
+    return collect($item['uris'])->mapWithKeys(function ($subItem, $subKey) use ($item) {
+        $uri = [
+            'uri'     => $subItem['uri'],
+            'methods' => [$subItem['method']],
+            'plugins' => [
+                'jwt-auth' => [
+                    'key_claim_name'   => 'sub',
+                    'algorithms'       => ['RS256'],
+                    'hide_credentials' => false,
+                ],
+            ],
+            'upstream' => [
+                'type'   => 'roundrobin',
+                'nodes'  => [$item['node'] => 1],
+                'scheme' => $item['scheme'],
+            ],
+        ];
+
+        $gralRewrite = $item['proxy-rewrite'] ?? false;
+        $customRewrite = $item['proxy-rewrite'] ?? false;
+        if ($gralRewrite || $customRewrite) {
+            $uri['plugins']['proxy-rewrite'] = $customRewrite ? $customRewrite : $gralRewrite;
+        }
+
+        return [$subItem['name'] => $uri];
+
+    })->toArray();
+
+})
+->collapse()
+->all();
+
+$config['routes'] = array_merge($config['routes'], $routesList);
+
+return $config;
