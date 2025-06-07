@@ -37,6 +37,12 @@ return [
                 'uri' => '/sales/payment/view-by-order/*',
                 'method' => 'POST',
             ],
+            [
+                'name' => 'protected-sales-telescope',
+                'uri' => '/sales/telescope',
+                'method' => 'GET',
+                'public' => true,
+            ],
         ]
     ],
     //'clientes' => []

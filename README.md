@@ -73,3 +73,26 @@ curl -i -L GET http://localhost:9080/api/posts \
   -H "Authorization: Bearer <TOKEN FROM API LOGIN>" \
   -H "Accept: application/json"
 ```
+
+## DOCKER SERVICES/PORTS
+
+- Network
+  - Internal: apisix
+  - External: shared-services-network
+
+|SERVICE NAME|SERVICE DESCRIPTION|INTERNAL PORT|EXTERNAL PORT|URL|Credentials|
+|---|---|---|---|---|---|
+|etcd|Key-Value store|2379|2379|-|-|
+|apisix|API Gateway|9180|9080|-|-|
+|apisix-dashboard|Apisix Dashboard|9000|9000|[Admin](http://localhost:9000)|admin:admin|
+|vault|Secure secrets|8200|8200|[Admin UI](http://localhost:8200/ui/)|Token:root|
+|vault-init|Initial secret keys and policies|-|-|-|-|
+|zookeeper|coordinate Kafka brokers|2181|-|-|-|
+|kafka|Broker|9092|-|-|-|
+|kafka UI|Broker UI|8080|9001|[Link](http://localhost:9001/ui/)|-|
+|auth-app|Identity (Laravel passport)|9000|-|[Login Api](http://localhost:9080/api/login)|
+|webserver|Web Server (nginx)|80 or 443|8000 or 8443|[Example](http://localhost:9080/sales/order/create)|
+|db|Database Server (Mysql)|3306|3307|-|-|
+|telescope|Insights for app||-|8444|[Host Link](https://myinvoice.local:8444/telescope)|
+
+<br>

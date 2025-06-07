@@ -13,7 +13,6 @@ services:
       - etcd_data:/bitnami/etcd
     networks:
       - apisix
-      - laravel_network
   apisix:
     image: apache/apisix:3.12.0-debian
     container_name: apisix
@@ -34,7 +33,6 @@ services:
       - "9180:9180"   # admin API
     networks:
       - apisix
-      - laravel_network
       - shared_services_network
 
   apisix-dashboard:
@@ -50,7 +48,6 @@ services:
       - "9000:9000"
     networks:
       - apisix
-      - laravel_network
 
   vault:
     hostname: vault
@@ -69,7 +66,6 @@ services:
     entrypoint: vault server -dev -dev-listen-address="0.0.0.0:8200" -dev-root-token-id="root"
     networks:
       - apisix
-      - laravel_network
 
   vault-init:
     container_name: vault-init
@@ -83,7 +79,6 @@ services:
     entrypoint: sh -c "/vault-init.sh"
     networks:
       - apisix
-      - laravel_network
   auth-app:
     build:
       context: .
@@ -95,7 +90,6 @@ services:
       - .:/var/www/html
     networks:
       - apisix
-      - laravel_network
     depends_on:
       - db
       - apisix
@@ -133,7 +127,6 @@ services:
       - ./certs:/etc/nginx/certs 
     networks:
       - apisix
-      - laravel_network
     depends_on:
       - auth-app
     healthcheck:
@@ -153,7 +146,6 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - apisix
-      - laravel_network
     env_file:
       - .env.docker
     environment:
@@ -168,10 +160,72 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+  
+  zookeeper:
+    image: bitnami/zookeeper:latest
+    container_name: zookeeper
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      - kafka_internal
+      - shared_services_network
+  
+  kafka:
+    image: bitnami/kafka:3.4.0-debian-11-r15
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      - KAFKA_ENABLE_KRAFT=no
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    networks:
+      - kafka_internal
+      - shared_services_network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  kafka-init:
+    container_name: kafka-init
+    image: bitnami/kafka:3.4.0-debian-11-r15
+    depends_on:
+      kafka:
+        condition: service_healthy
+    # Override the container’s startup to just run your script:
+    entrypoint: sh -c "/create_topics.sh"
+    # Mount your init script (make sure it’s executable: chmod +x)
+    volumes:
+      - ./kafka/create_topics.sh:/create_topics.sh:ro
+    networks:
+      - kafka_internal
+      - shared_services_network
+    restart: "no"
+  
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka_ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+    networks:
+      - kafka_internal
+      - shared_services_network
+    ports:
+      - "9001:8080"
+  
 networks:
   apisix:
     driver: bridge
-  laravel_network:
+  kafka_internal:
     driver: bridge
   shared_services_network:
     driver: bridge

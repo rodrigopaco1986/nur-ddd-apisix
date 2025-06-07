@@ -69,6 +69,11 @@ $routesList = collect($routesConfig)->map(function ($item, $key) {
             $uri['plugins']['proxy-rewrite'] = $customRewrite ? $customRewrite : $gralRewrite;
         }
 
+        $public = $subItem['public'] ?? false;
+        if ($public === true) {
+            unset($uri['plugins']['jwt-auth']);
+        }
+
         return [$subItem['name'] => $uri];
 
     })->toArray();
