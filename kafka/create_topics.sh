@@ -9,7 +9,23 @@ echo "Creating topics…"
 kafka-topics.sh \
   --bootstrap-server kafka:9092 \
   --create \
-  --topic client.created \
+  --topic patient.created \
+  --partitions 1 \
+  --replication-factor 1 \
+  || true
+
+kafka-topics.sh \
+  --bootstrap-server kafka:9092 \
+  --create \
+  --topic patient.updated \
+  --partitions 1 \
+  --replication-factor 1 \
+  || true
+
+kafka-topics.sh \
+  --bootstrap-server kafka:9092 \
+  --create \
+  --topic patient.deleted \
   --partitions 1 \
   --replication-factor 1 \
   || true
