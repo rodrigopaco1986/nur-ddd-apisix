@@ -46,8 +46,6 @@ class PatientBrokerHandler
             $handler = app($handlerClass);
             $handler($message);
 
-            $message->commit();
-
         } catch (Throwable $e) {
             Log::error("Exception occurred while handling Kafka message for topic [{$topicName}].", [
                 'handler' => $handlerClass,

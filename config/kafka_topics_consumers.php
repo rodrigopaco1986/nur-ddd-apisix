@@ -4,7 +4,7 @@
 // TOPIC => CONSUMER
 return [
     'patients' => [
-        'patient.created' => \App\Kafka\Handlers\PatientUpsertHandler::class,
+        'patient.created' => \App\Kafka\Handlers\PatientCreateHandler::class,
         'patient.updated' => null,
         'patient.deleted' => null,
     ],

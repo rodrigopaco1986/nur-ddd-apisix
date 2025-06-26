@@ -222,6 +222,47 @@ services:
       - shared_services_network
     ports:
       - "9001:8080"
+
+  auth-kafka-patient-consumer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: auth_kafka_patient_consumer
+    working_dir: /var/www/html
+    restart: unless-stopped
+    command: php artisan kafka:consume-patients
+    volumes:
+      - .:/var/www/html
+      - /var/www/html/vendor
+    networks:
+      - apisix
+      - kafka_internal
+    depends_on:
+      kafka:
+        condition: service_started
+      auth-app:
+        condition: service_started
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=${DB_CONNECTION}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - QUEUE_CONNECTION=database
+    healthcheck:
+      test: ["CMD", "php", "-r", "echo @fsockopen('localhost', 9000) ? 'Healthy' : 'Unhealthy';"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
   
 networks:
   apisix:

@@ -37,15 +37,12 @@ class AuthServiceProvider extends ServiceProvider
             ];
 
             if (in_array($command, $setupCommands)) {
-                Log::info("Skipping Vault key loading for setup command: '{$command}'");
-
                 return;
             }
         }
 
         if (config('passport.keys_from_vault')) {
             try {
-                Log::info('Loading Passport keys from Vault...');
 
                 $vaultClient = new VaultClient;
                 $privateKey = $vaultClient->getOauthKey('private');
@@ -59,8 +56,6 @@ class AuthServiceProvider extends ServiceProvider
                     'passport.private_key' => $privateKey,
                     'passport.public_key' => $publicKey,
                 ]);
-
-                Log::info('Successfully loaded Passport keys from Vault into runtime configuration.');
 
             } catch (\Exception $e) {
                 Log::critical('A critical error occurred while trying to load Passport keys from Vault.', [
