@@ -1,6 +1,6 @@
 <?php
 
-$routesConfig = require_once __DIR__ . '/apisixroutes.php';
+$routesConfig = require_once __DIR__.'/apisixroutes.php';
 
 $config = [
 
@@ -11,6 +11,22 @@ $config = [
 
         'login' => [
             'uri' => '/api/login',
+            'methods' => ['POST'],
+            'plugins' => [
+                'proxy-rewrite' => [
+                    'uri' => '/api/auth/token',
+                    'scheme' => 'https',
+                ],
+            ],
+            'upstream' => [
+                'type' => 'roundrobin',
+                'nodes' => ['webserver:443' => 1],
+                'scheme' => 'https',
+            ],
+        ],
+
+        'login-oauth' => [
+            'uri' => '/api/login-oauth',
             'methods' => ['POST'],
             'plugins' => [
                 'proxy-rewrite' => [
@@ -47,18 +63,18 @@ $routesList = collect($routesConfig)->map(function ($item, $key) {
 
     return collect($item['uris'])->mapWithKeys(function ($subItem, $subKey) use ($item) {
         $uri = [
-            'uri'     => $subItem['uri'],
+            'uri' => $subItem['uri'],
             'methods' => [$subItem['method']],
             'plugins' => [
                 'jwt-auth' => [
-                    'key_claim_name'   => 'sub',
-                    'algorithms'       => ['RS256'],
+                    'key_claim_name' => 'sub',
+                    'algorithms' => ['RS256'],
                     'hide_credentials' => false,
                 ],
             ],
             'upstream' => [
-                'type'   => 'roundrobin',
-                'nodes'  => [$item['node'] => 1],
+                'type' => 'roundrobin',
+                'nodes' => [$item['node'] => 1],
                 'scheme' => $item['scheme'],
             ],
         ];
@@ -79,8 +95,8 @@ $routesList = collect($routesConfig)->map(function ($item, $key) {
     })->toArray();
 
 })
-->collapse()
-->all();
+    ->collapse()
+    ->all();
 
 $config['routes'] = array_merge($config['routes'], $routesList);
 

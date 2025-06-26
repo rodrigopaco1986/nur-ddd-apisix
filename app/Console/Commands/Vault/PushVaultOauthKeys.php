@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Vault;
 
 use App\Services\VaultClient;
 use Illuminate\Console\Command;

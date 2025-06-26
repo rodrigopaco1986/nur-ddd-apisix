@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Auth;
 
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -15,9 +15,9 @@ class SetupAuth extends Command
      *
      * @var string
      */
-    protected $signature = 'auth:setup
+    protected $signature = 'auth:oauth-setup
                             {--email=admin@gmail.com : Default user email}
-                            {--password=Admin123_       : Default user password}
+                            {--password=Admin123_ : Default user password}
                             {--client-name=APISIX Password Client : Name for the Passport password grant client}';
 
     /**

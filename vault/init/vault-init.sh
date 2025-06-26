@@ -19,8 +19,12 @@ vault secrets enable -path=data -version=2 kv
 
 # write a secret to the kv store
 vault kv put secret/data/apisix/oauth \
-  public="oauth-public.key" \
-  private="oauth-private.key"
+  public="" \
+  private=""
+
+vault kv put secret/data/apisix/personal-oauth \
+  id="" \
+  secret=""
 
 # read the secret back
 #vault kv get data/oauth/oauth-public-key

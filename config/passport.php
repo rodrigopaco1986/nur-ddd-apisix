@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Load Keys From Vault
+    |--------------------------------------------------------------------------
+    |
+    | This option determines whether Laravel Passport should attempt to load its
+    | encryption keys from HashiCorp Vault instead of the local filesystem.
+    | You must have a working VaultClient implementation for this to work.
+    |
+    */
+    'keys_from_vault' => env('PASSPORT_KEYS_FROM_VAULT', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Encryption Keys
     |--------------------------------------------------------------------------
     |

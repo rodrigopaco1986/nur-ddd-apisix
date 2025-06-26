@@ -41,9 +41,30 @@ class VaultClient
         return json_decode($res->body(), true, 10, JSON_THROW_ON_ERROR);
     }
 
+    public function getOauthPersonalKeys(): array
+    {
+        $res = $this->client()
+            ->get('/v1/secret/data/data/apisix/personal-oauth');
+
+        if (! $res->successful()) {
+            throw new VaultException(
+                'Vault route /v1/secret/data/data/apisix/personal-oauth failed: '.$res->status().' '.$res->body()
+            );
+        }
+
+        return json_decode($res->body(), true, 10, JSON_THROW_ON_ERROR);
+    }
+
     public function getOauthKey(string $type = 'public'): string
     {
         $keys = $this->getOauthKeys();
+
+        return $keys['data']['data'][$type] ?? '';
+    }
+
+    public function getOauthPersonalKey(string $type = 'public'): string
+    {
+        $keys = $this->getOauthPersonalKeys();
 
         return $keys['data']['data'][$type] ?? '';
     }
@@ -61,6 +82,23 @@ class VaultClient
         if (! $res->successful()) {
             throw new VaultException(
                 'Vault posting oauth keys failed: '.$res->status().' '.$res->body()
+            );
+        }
+    }
+
+    public function putOauthPersonalKeys(string $id, string $secret): void
+    {
+        $res = $this->client()
+            ->post('/v1/secret/data/data/apisix/personal-oauth', [
+                'data' => [
+                    'id' => $id,
+                    'secret' => $secret,
+                ],
+            ]);
+
+        if (! $res->successful()) {
+            throw new VaultException(
+                'Vault posting oauth personal keys failed: '.$res->status().' '.$res->body()
             );
         }
     }

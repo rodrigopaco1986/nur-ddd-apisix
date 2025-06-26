@@ -28,15 +28,21 @@ echo "MySQL is up – continuing."
 
 #chmod -R 775 /var/www/html/.env
 
+echo "Generating passport keys..."
+php artisan passport:keys --force
+
+echo "Pushing oauth keys to vault..."
+php artisan vault:push-oauth-keys
+
 echo "Migrating..."
 php artisan migrate --force
 
-echo "Generating passport keys..."
-php artisan passport:keys --force
-echo "Pushing keys to vault..."
-php artisan vault:push-oauth-keys
-echo "Generating default users..."
-php artisan auth:setup
+echo "Generating default user and oauth keys for him..."
+php artisan auth:oauth-setup
+
+echo "Generating default user and client keys for him and pushing to vault..."
+php artisan auth:setup-personal-client
+
 echo "Pushing routes to apisix..."
 php artisan apisix:push-routes
 

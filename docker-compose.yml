@@ -148,12 +148,12 @@ services:
     networks:
       - apisix
     env_file:
-      - .env.docker
+      - .env
     environment:
-      MYSQL_DATABASE: auth_app
+      MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_USER: laravel
-      MYSQL_PASSWORD: laravel
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     command: ["--default-authentication-plugin=mysql_native_password"]
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Apisix;
 
 use App\Services\ApisixClient;
 use App\Services\VaultClient;

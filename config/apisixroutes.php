@@ -10,7 +10,7 @@ return [
                 'name' => 'protected-sales-order-create-api',
                 'uri' => '/sales/order/create',
                 'method' => 'POST',
-                //'proxy-rewrite' => [SOME REWRITE RULE THAT OVERWRITES THE GENERAL ONE],
+                // 'proxy-rewrite' => [SOME REWRITE RULE THAT OVERWRITES THE GENERAL ONE],
             ],
             [
                 'name' => 'protected-sales-order-view-api',
@@ -43,7 +43,7 @@ return [
                 'method' => 'GET',
                 'public' => true,
             ],
-        ]
+        ],
     ],
-    //'clientes' => []
+    // 'clientes' => []
 ];
