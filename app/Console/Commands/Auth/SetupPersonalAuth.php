@@ -71,6 +71,10 @@ class SetupPersonalAuth extends Command
                 'secret' => $client->secret,
             ]);
 
+            $this->call('apisix:push-consumers', [
+                'consumerId' => $user->id,
+            ]);
+
             DB::commit();
 
             // Display the details of the newly created client.

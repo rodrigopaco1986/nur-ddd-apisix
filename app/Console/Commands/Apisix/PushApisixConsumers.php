@@ -6,7 +6,7 @@ use App\Services\ApisixClient;
 use App\Services\VaultClient;
 use Illuminate\Console\Command;
 
-class PushApisixRoutes extends Command
+class PushApisixConsumers extends Command
 {
     private $apisixClient;
 
@@ -17,14 +17,15 @@ class PushApisixRoutes extends Command
      *
      * @var string
      */
-    protected $signature = 'apisix:push-routes';
+    protected $signature = 'apisix:push-consumers
+                            {consumerId : Consumer id}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Import APISIX routes from config into the gateway';
+    protected $description = 'Import APISIX consumer into the gateway';
 
     public function __construct(ApisixClient $apisixClient, VaultClient $vaultClient)
     {
@@ -38,15 +39,11 @@ class PushApisixRoutes extends Command
      */
     public function handle()
     {
-        //$consumerId = (string) $this->option('consumer-id');
+        $consumerId = (string) $this->argument('consumerId');
 
-        $this->info('→ Pushing APISIX routes...');
-        $this->apisixClient->pushRoutes();
-        $this->info('✔ Done.');
-
-        /*$publicOauthToken = $this->vaultClient->getOauthKey('public');
+        $publicOauthToken = $this->vaultClient->getOauthKey('public');
         $this->info('→ Pushing APISIX consumers...');
         $this->apisixClient->pushConsumers($consumerId, $publicOauthToken);
-        $this->info('✔ Done.');*/
+        $this->info('✔ Done.');
     }
 }
