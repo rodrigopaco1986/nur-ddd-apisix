@@ -38,7 +38,7 @@ class PushApisixRoutes extends Command
      */
     public function handle()
     {
-        //$consumerId = (string) $this->option('consumer-id');
+        // $consumerId = (string) $this->option('consumer-id');
 
         $this->info('→ Pushing APISIX routes...');
         $this->apisixClient->pushRoutes();

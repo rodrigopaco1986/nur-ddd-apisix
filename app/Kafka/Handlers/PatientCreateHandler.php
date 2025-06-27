@@ -2,6 +2,7 @@
 
 namespace App\Kafka\Handlers;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
 use Junges\Kafka\Contracts\ConsumerMessage;
@@ -20,10 +21,7 @@ class PatientCreateHandler
         $exitCode = Artisan::call('auth:setup-personal-client', [
             '--email' => $email,
             '--password' => $password,
+            '--user-role' => User::R0LE_PATIENT,
         ]);
-
-        echo '<pre>';
-        print_r($exitCode);
-        echo '</pre>';
     }
 }

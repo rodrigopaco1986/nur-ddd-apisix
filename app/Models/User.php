@@ -14,6 +14,20 @@ class User extends Authenticatable implements OAuthenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    const R0LE_ADMIN = 'ADMIN';
+
+    const R0LE_SECRETARY = 'SECRETARY';
+
+    const R0LE_NURSE = 'NURSE';
+
+    const R0LE_DOCTOR = 'DOCTOR';
+
+    const R0LE_CHEF = 'CHEF';
+
+    const R0LE_DEALER = 'DEALER';
+
+    const R0LE_PATIENT = 'PATIENT';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -23,6 +37,7 @@ class User extends Authenticatable implements OAuthenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**

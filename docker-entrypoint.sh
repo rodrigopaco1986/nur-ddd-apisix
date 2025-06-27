@@ -41,7 +41,7 @@ echo "Generating default user and oauth keys for him..."
 php artisan auth:oauth-setup
 
 echo "Generating default user and client keys for him and pushing to vault..."
-php artisan auth:setup-personal-client
+php artisan auth:setup-personal-client --user-role=ADMIN
 
 echo "Pushing routes to apisix..."
 php artisan apisix:push-routes

@@ -16,6 +16,7 @@ class SetupPersonalAuth extends Command
      * @var string
      */
     protected $signature = 'auth:setup-personal-client
+                            {--user-role='.User::R0LE_PATIENT.' : Default user role}
                             {--email=admin@gmail.com : Default user email}
                             {--password=Admin123_ : Default user password}
                             {--client-name=Auth App : Name for the Passport Client}';
@@ -32,6 +33,7 @@ class SetupPersonalAuth extends Command
      */
     public function handle()
     {
+        $userRole = $this->option('user-role');
         $email = $this->option('email');
         $password = $this->option('password');
         $clientName = $this->option('client-name', 'Auth App');
@@ -44,6 +46,7 @@ class SetupPersonalAuth extends Command
                 [
                     'name' => ucfirst(explode('@', $email)[0]),
                     'password' => Hash::make($password),
+                    'role' => $userRole,
                 ]
             );
 
