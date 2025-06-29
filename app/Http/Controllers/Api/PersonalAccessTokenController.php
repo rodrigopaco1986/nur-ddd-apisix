@@ -35,6 +35,7 @@ class PersonalAccessTokenController extends Controller
 
         return response()->json([
             'token' => $token->accessToken,
+            'user' => collect($user)->toArray(),
         ]);
     }
 }
