@@ -27,6 +27,28 @@ class ApisixClient
             ->baseUrl($this->baseUri);
     }
 
+    /**
+     * Pushes the global rule configurations to APISIX.
+     */
+    public function pushGlobalRules(): void
+    {
+        $rules = config('apisix.global_rules');
+
+        if (empty($rules)) {
+            return;
+        }
+
+        foreach ($rules as $id => $config) {
+            $res = $this->client()->put("/global_rules/{$id}", $config);
+
+            if (! $res->successful()) {
+                throw new ApisixException(
+                    "APISIX global rule '{$id}' update failed: ".$res->status().' '.$res->body()
+                );
+            }
+        }
+    }
+
     public function pushRoutes(): void
     {
         $routes = config('apisix.routes');

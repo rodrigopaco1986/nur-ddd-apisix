@@ -45,5 +45,42 @@ return [
             ],
         ],
     ],
-    // 'clientes' => []
+    'services' => [
+        'node' => 'service-webserver:80',
+        'scheme' => 'http',
+        'proxy-rewrite' => ['regex_uri' => ['^/services/(.*)', '/$1']],
+        'uris' => [
+            [
+                'name' => 'protected-services-service-list-api',
+                'uri' => '/services/service',
+                'method' => 'GET',
+            ],
+            [
+                'name' => 'protected-services-service-create-api',
+                'uri' => '/services/service/create',
+                'method' => 'POST',
+            ],
+            [
+                'name' => 'protected-services-service-view-api',
+                'uri' => '/services/service/*',
+                'method' => 'GET',
+            ],
+            [
+                'name' => 'protected-services-service-update-api',
+                'uri' => '/services/service/*',
+                'method' => 'PUT',
+            ],
+            [
+                'name' => 'protected-services-service-delete-api',
+                'uri' => '/services/service/*',
+                'method' => 'DELETE',
+            ],
+            [
+                'name' => 'protected-services-telescope',
+                'uri' => '/services/telescope',
+                'method' => 'GET',
+                'public' => true,
+            ],
+        ],
+    ],
 ];

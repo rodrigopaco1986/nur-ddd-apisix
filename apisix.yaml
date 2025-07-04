@@ -1,3 +1,16 @@
+plugins:
+  # trafic plugins
+  - limit-conn
+  - limit-count
+  - limit-req
+  # auth plugins
+  - jwt-auth
+  - proxy-rewrite
+  # Observability plugins
+  - opentelemetry
+  - http-logger
+  - prometheus
+
 apisix:
   node_listen: 9080 # APISIX listening port
   enable_ipv6: false
@@ -32,3 +45,14 @@ deployment:
       - "http://etcd:2379" # multiple etcd address
     prefix: "/apisix" # apisix configurations prefix
     timeout: 30 # 30 seconds
+
+# This section provides default attributes for specific plugins.
+plugin_attr:
+  opentelemetry:
+    resource:
+      service.name: "APISIX_Gateway" # You can name your service here
+      service.instance.id: "apisix-instance-1"
+  prometheus:
+    export_addr:
+      ip: 0.0.0.0
+      port: 9091

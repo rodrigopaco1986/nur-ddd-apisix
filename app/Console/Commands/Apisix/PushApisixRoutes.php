@@ -40,6 +40,10 @@ class PushApisixRoutes extends Command
     {
         // $consumerId = (string) $this->option('consumer-id');
 
+        $this->info('→ Pushing APISIX Global Rules...');
+        $this->apisixClient->pushGlobalRules();
+        $this->info('✔ Global Rules Done.');
+
         $this->info('→ Pushing APISIX routes...');
         $this->apisixClient->pushRoutes();
         $this->info('✔ Done.');

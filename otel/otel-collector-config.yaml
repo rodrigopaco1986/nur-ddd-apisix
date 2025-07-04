@@ -1,0 +1,45 @@
+receivers:
+  otlp:
+    protocols:
+      http: # Receives traces and logs from APISIX's opentelemetry and http-logger plugins
+        endpoint: 0.0.0.0:4318
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "apisix-metrics"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["apisix:9091"] # Scrapes metrics from APISIX's prometheus plugin endpoint
+
+processors:
+  batch:
+
+exporters:
+  # Exporter for tracing
+  otlp:
+    endpoint: jaeger-all-in-one:4317
+    tls:
+      insecure: true
+
+  # Exporter for Metrics
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+  # Exporter for Logs
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [prometheus]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]

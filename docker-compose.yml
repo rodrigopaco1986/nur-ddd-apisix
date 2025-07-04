@@ -1,5 +1,8 @@
 version: '3.9'
 services:
+  #####API GATEWAY SERVICES######
+  
+  #key-value store (used for apisix)
   etcd:
     image: bitnami/etcd:3.5
     container_name: etcd
@@ -12,7 +15,9 @@ services:
     volumes:
       - etcd_data:/bitnami/etcd
     networks:
-      - apisix
+      - shared_services_network
+
+  # dynamic, real-time, high-performance API Gateway
   apisix:
     image: apache/apisix:3.12.0-debian
     container_name: apisix
@@ -32,9 +37,9 @@ services:
       - "9080:9080"   # proxy listen
       - "9180:9180"   # admin API
     networks:
-      - apisix
       - shared_services_network
 
+  # admin dashboard for apisix
   apisix-dashboard:
     image: apache/apisix-dashboard:3.0.1-alpine
     container_name: apisix-dashboard
@@ -47,8 +52,9 @@ services:
     ports:
       - "9000:9000"
     networks:
-      - apisix
+      - shared_services_network
 
+  # Secure, store, and tightly control access to tokens, passwords, certificates, encryption keys for protecting secrets
   vault:
     hostname: vault
     container_name: vault
@@ -65,8 +71,9 @@ services:
       - IPC_LOCK
     entrypoint: vault server -dev -dev-listen-address="0.0.0.0:8200" -dev-root-token-id="root"
     networks:
-      - apisix
+      - shared_services_network
 
+  # script to init secrets in vault (oauth certs and client keys)
   vault-init:
     container_name: vault-init
     image: vault:1.13.3
@@ -78,7 +85,11 @@ services:
     restart: "no"
     entrypoint: sh -c "/vault-init.sh"
     networks:
-      - apisix
+      - shared_services_network
+  
+  #####IDENTITY APP - API GATEWAY SETTINGS CREATOR######
+
+  # identity laravel app
   auth-app:
     build:
       context: .
@@ -90,7 +101,7 @@ services:
       - .:/var/www/html
       - /var/www/html/vendor
     networks:
-      - apisix
+      - shared_services_network
     depends_on:
       - db
       - apisix
@@ -115,6 +126,7 @@ services:
       retries: 3
       start_period: 10s
 
+  # identity app web server
   webserver:
     image: nginx:latest
     container_name: nginx_server
@@ -127,7 +139,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./certs:/etc/nginx/certs 
     networks:
-      - apisix
+      - shared_services_network
     depends_on:
       - auth-app
     healthcheck:
@@ -137,6 +149,7 @@ services:
       retries: 3
       start_period: 10s
 
+  # identity app database
   db:
     image: mysql:8.0
     container_name: mysql_db
@@ -146,7 +159,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - apisix
+      - shared_services_network
     env_file:
       - .env
     environment:
@@ -162,15 +175,18 @@ services:
       retries: 3
       start_period: 10s
   
+  #####BROKER SERVICES######
+
+  # centralized service used by Apache Kafka to manage and coordinate a distributed system of Kafka brokers
   zookeeper:
     image: bitnami/zookeeper:latest
     container_name: zookeeper
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
-      - kafka_internal
       - shared_services_network
   
+  # broker
   kafka:
     image: bitnami/kafka:3.4.0-debian-11-r15
     container_name: kafka
@@ -184,7 +200,6 @@ services:
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
     networks:
-      - kafka_internal
       - shared_services_network
     healthcheck:
       test: ["CMD", "kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
@@ -193,22 +208,21 @@ services:
       retries: 5
       start_period: 10s
   
+  # script to create topics into kafka
   kafka-init:
     container_name: kafka-init
     image: bitnami/kafka:3.4.0-debian-11-r15
     depends_on:
       kafka:
         condition: service_healthy
-    # Override the container’s startup to just run your script:
     entrypoint: sh -c "/create_topics.sh"
-    # Mount your init script (make sure it’s executable: chmod +x)
     volumes:
       - ./kafka/create_topics.sh:/create_topics.sh:ro
     networks:
-      - kafka_internal
       - shared_services_network
     restart: "no"
   
+  # admin dashboard for kafka
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka_ui
@@ -218,11 +232,11 @@ services:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
     networks:
-      - kafka_internal
       - shared_services_network
     ports:
       - "9001:8080"
 
+  # kafka consumer for patient micro service, so we can create an user in the identity app
   auth-kafka-patient-consumer:
     build:
       context: .
@@ -235,8 +249,7 @@ services:
       - .:/var/www/html
       - /var/www/html/vendor
     networks:
-      - apisix
-      - kafka_internal
+      - shared_services_network
     depends_on:
       kafka:
         condition: service_started
@@ -263,12 +276,86 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  #####   OBSERVABILITY SERVICES   ######
+
+  # OpenTelemetry Collector: The central pipeline for all telemetry data
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel_collector
+    restart: unless-stopped
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver (for traces and logs from APISIX)
+    depends_on:
+      apisix:
+        condition: service_started
+      jaeger-all-in-one:
+        condition: service_started
+      loki:
+        condition: service_started
+      prometheus:
+        condition: service_started
+    networks:
+      - shared_services_network
+
+  # Jaeger: For storing and visualizing traces
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686" # Jaeger UI
+    networks:
+      - shared_services_network
+
+  # Loki: For storing logs
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100" # Loki API
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - shared_services_network
+  
+  # Prometheus: For scraping and storing metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090" # Prometheus UI
+    command: '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - shared_services_network
+  
+  # Grafana: For visualizing metrics and logs
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # Grafana UI
+    volumes:
+      - grafana_data:/var/lib/grafana
+      # This bind mount provides the provisioning files for datasources and dashboards.
+      # It maps your local './grafana/provisioning' directory to the correct directory inside the container.
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - shared_services_network
   
 networks:
-  apisix:
-    driver: bridge
-  kafka_internal:
-    driver: bridge
   shared_services_network:
     driver: bridge
     name: shared-services-network
@@ -278,3 +365,5 @@ volumes:
     driver: local
   laravel_app:
   mysql_data:
+  prometheus_data:
+  grafana_data:
